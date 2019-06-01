@@ -37,6 +37,7 @@ public class LookupConfiguration extends Configuration {
     }
 
     private List<String> ignoreCrossRefFields;
+    private List<String> ignoreFatcatFields;
 
     private int maxAcceptedRequests;
 
@@ -78,6 +79,14 @@ public class LookupConfiguration extends Configuration {
 
     public void setIgnoreCrossRefFields(List<String> ignoreCrossRefFields) {
         this.ignoreCrossRefFields = ignoreCrossRefFields;
+    }
+
+    public List<String> getIgnoreFatcatFields() {
+        return this.ignoreFatcatFields;
+    }
+
+    public void setIgnoreFatcatFields(List<String> ignoreFatcatFields) {
+        this.ignoreFatcatFields = ignoreFatcatFields;
     }
 
     public int getMaxAcceptedRequests() {

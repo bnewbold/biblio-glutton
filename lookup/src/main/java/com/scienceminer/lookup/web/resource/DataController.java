@@ -76,11 +76,20 @@ public class DataController {
         return storage.retrieveOaRecords(total);
     }
 
+/*
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/crossref")
     public List<Pair<String, String>> getMetadataSamples(@QueryParam("total") Integer total) {
         return storage.retrieveCrossrefRecords(total);
+    }
+*/
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/fatcat")
+    public List<Pair<String, String>> getMetadataSamples(@QueryParam("total") Integer total) {
+        return storage.retrieveFatcatRecords(total);
     }
 
     @GET

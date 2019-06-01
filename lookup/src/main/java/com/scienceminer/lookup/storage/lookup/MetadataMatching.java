@@ -47,6 +47,7 @@ public class MetadataMatching {
     public static final String INDEX_FIELD_NAME_TITLE = "title";
     public static final String INDEX_FIELD_NAME_FIRST_PAGE = "first_page";
     public static final String INDEX_FIELD_NAME_FIRST_AUTHOR = "first_author";
+    public static final String INDEX_FIELD_NAME_FATCAT_IDENT = "fatcat_ident";
     public static final String INDEX_FIELD_NAME_DOI = "DOI";
     public static final String INDEX_FIELD_NAME_VOLUME = "volume";
     public static final String INDEX_FIELD_NAME_ISSN = "issn";
@@ -273,6 +274,7 @@ public class MetadataMatching {
         String[] includeFields = new String[]
                 {
                         INDEX_FIELD_NAME_ID,
+                        INDEX_FIELD_NAME_FATCAT_IDENT,
                         INDEX_FIELD_NAME_DOI,
                         INDEX_FIELD_NAME_FIRST_AUTHOR,
                         INDEX_FIELD_NAME_TITLE
@@ -295,6 +297,7 @@ public class MetadataMatching {
         while (it.hasNext()) {
             SearchHit hit = it.next();
 
+            String fatcatIdent = (String) hit.getSourceAsMap().get(INDEX_FIELD_NAME_FATCAT_IDENT);
             String DOI = (String) hit.getSourceAsMap().get(INDEX_FIELD_NAME_DOI);
             String firstAuthor = (String) hit.getSourceAsMap().get(INDEX_FIELD_NAME_FIRST_AUTHOR);
 
@@ -304,12 +307,13 @@ public class MetadataMatching {
                 title = titles.get(0);
             }
 
+            matchingDocument.setFatcatIdent(fatcatIdent);
             matchingDocument.setDOI(DOI);
             matchingDocument.setFirstAuthor(firstAuthor);
             matchingDocument.setTitle(title);
-            final String jsonObject = metadataLookup.retrieveJsonDocument(DOI);
+            final String jsonObject = metadataLookup.retrieveJsonDocument(fatcatIdent);
             if (jsonObject == null) {
-                matchingDocument.setException(new NotFoundException("The index returned a result but the body cannot be fetched. Doi: " + DOI));
+                matchingDocument.setException(new NotFoundException("The index returned a result but the body cannot be fetched. fatcat ident: " + fatcatIdent + " (doi:" + DOI + ", hit=" + hit.toString() + ")"));
                 return matchingDocument;
             }
             matchingDocument.setJsonObject(jsonObject);

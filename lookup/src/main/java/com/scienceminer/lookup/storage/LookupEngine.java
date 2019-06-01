@@ -121,8 +121,15 @@ public class LookupEngine {
         });
     }
 
+    public String retrieveByFatcatIdent(String fatcatIdent, Boolean postValidate, String firstAuthor, String atitle) {
+        MatchingDocument outputData = metadataLookup.retrieveByMetadata(fatcatIdent);
+        outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
+
+        return injectIdsByDoi(outputData.getJsonObject(), outputData.getDOI());
+    }
+
     public String retrieveByDoi(String doi, Boolean postValidate, String firstAuthor, String atitle) {
-        MatchingDocument outputData = metadataLookup.retrieveByMetadata(doi);
+        MatchingDocument outputData = metadataLookup.retrieveByMetadataDoi(doi);
         outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
 
         return injectIdsByDoi(outputData.getJsonObject(), outputData.getDOI());

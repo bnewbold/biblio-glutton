@@ -1,6 +1,7 @@
 package com.scienceminer.lookup.data;
 
 public class MatchingDocument {
+    private String fatcatIdent;
     private String DOI;
     private String firstAuthor;
     private String title;
@@ -15,12 +16,12 @@ public class MatchingDocument {
         this.exception = throwable;
     }
 
-    public MatchingDocument(String DOI) {
-        this.DOI = DOI;
+    public MatchingDocument(String fatcatIdent) {
+        this.fatcatIdent = fatcatIdent;
     }
 
-    public MatchingDocument(String DOI, String jsonObject) {
-        this.DOI = DOI;
+    public MatchingDocument(String fatcatIdent, String jsonObject) {
+        this.fatcatIdent = fatcatIdent;
         this.jsonObject = jsonObject;
     }
 
@@ -45,6 +46,14 @@ public class MatchingDocument {
 
     public void setJsonObject(String jsonObject) {
         this.jsonObject = jsonObject;
+    }
+
+    public String getFatcatIdent() {
+        return fatcatIdent;
+    }
+
+    public void setFatcatIdent(String fatcatIdent) {
+        this.fatcatIdent = fatcatIdent;
     }
 
     public String getDOI() {

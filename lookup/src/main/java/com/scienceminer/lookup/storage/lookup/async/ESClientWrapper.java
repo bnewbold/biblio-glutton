@@ -56,7 +56,7 @@ public class ESClientWrapper {
                 LOGGER.debug("Got an error, freeing a spot: " + i);
                 Exception returnException = e;
                 if (e instanceof IOException) {
-                    returnException = new ServiceException(500, "Cannot connect to Elasticsearch", e);
+                    returnException = new ServiceException(500, "Cannot connect to Elasticsearch: " + e.toString(), e);
                 }
                 callback.accept(null, returnException);
             }

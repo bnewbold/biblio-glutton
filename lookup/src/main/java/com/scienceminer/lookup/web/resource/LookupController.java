@@ -61,6 +61,7 @@ public class LookupController {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/")
     public void getByQueryAsync(
+            @QueryParam("fatcat_ident") String fatcatIdent,
             @QueryParam("doi") String doi,
             @QueryParam("pmid") String pmid,
             @QueryParam("pmc") String pmc,
@@ -96,11 +97,12 @@ public class LookupController {
         if (postValidate == null) postValidate = Boolean.TRUE;
         if (parseReference == null) parseReference = Boolean.TRUE;
 
-        getByQuery(doi, pmid, pmc, pii, istexid, firstAuthor, atitle,
+        getByQuery(fatcatIdent, doi, pmid, pmc, pii, istexid, firstAuthor, atitle,
                 postValidate, jtitle, volume, firstPage, biblio, parseReference, asyncResponse);
     }
 
     protected void getByQuery(
+            String fatcatIdent,
             String doi,
             String pmid,
             String pmc,
@@ -119,6 +121,23 @@ public class LookupController {
 
         boolean areParametersEnoughToLookup = false;
         StringBuilder messagesSb = new StringBuilder();
+
+        if (isNotBlank(fatcatIdent)) {
+            areParametersEnoughToLookup = true;
+            try {
+                final String response = lookupEngine.retrieveByFatcatIdent(fatcatIdent, postValidate, firstAuthor, atitle);
+
+                if (isNotBlank(response)) {
+                    asyncResponse.resume(response);
+                    return;
+
+                }
+
+            } catch (NotFoundException e) {
+                messagesSb.append(e.getMessage());
+                LOGGER.warn("fatcat ident did not matched, move to additional metadata");
+            }
+        }
 
         if (isNotBlank(doi)) {
             areParametersEnoughToLookup = true;

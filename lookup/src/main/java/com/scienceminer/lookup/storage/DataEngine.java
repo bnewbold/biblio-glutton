@@ -64,7 +64,7 @@ public class DataEngine {
         return istexLookup.retrieveList_istexToIds(total);
     }
 
-    public List<Pair<String, String>> retrieveCrossrefRecords(Integer total) {
+    public List<Pair<String, String>> retrieveFatcatRecords(Integer total) {
         return metadataLookup.retrieveList(total);
     }
 

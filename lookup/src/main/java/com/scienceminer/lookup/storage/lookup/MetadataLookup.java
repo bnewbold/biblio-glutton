@@ -5,7 +5,7 @@ import com.scienceminer.lookup.configuration.LookupConfiguration;
 import com.scienceminer.lookup.data.MatchingDocument;
 import com.scienceminer.lookup.exception.ServiceException;
 import com.scienceminer.lookup.exception.ServiceOverloadedException;
-import com.scienceminer.lookup.reader.CrossrefJsonReader;
+import com.scienceminer.lookup.reader.FatcatJsonReader;
 import com.scienceminer.lookup.storage.StorageEnvFactory;
 import com.scienceminer.lookup.utils.BinarySerialiser;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -26,20 +26,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.scienceminer.lookup.web.resource.DataController.DEFAULT_MAX_SIZE_LIST;
 import static java.nio.ByteBuffer.allocateDirect;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.lowerCase;
 
 /**
- * Lookup metadata -> doi
+ * Lookup metadata -> fatcatIdent
  */
 public class MetadataLookup {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataLookup.class);
 
     private Env<ByteBuffer> environment;
-    private Dbi<ByteBuffer> dbCrossrefJson;
+    private Dbi<ByteBuffer> dbFatcatJson;
+    private Dbi<ByteBuffer> dbDoiToFatcat;
 
-    public static final String ENV_NAME = "crossref";
+    public static final String ENV_NAME = "fatcat";
 
-    public static final String NAME_CROSSREF_JSON = ENV_NAME + "_Jsondoc";
+    public static final String NAME_FATCAT_JSON = ENV_NAME + "_Jsondoc";
+    public static final String NAME_DOI2FATCAT = ENV_NAME + "_doi2fatcat";
     private final int batchSize;
 
     private LookupConfiguration configuration;
@@ -49,26 +52,30 @@ public class MetadataLookup {
 
         configuration = storageEnvFactory.getConfiguration();
         batchSize = configuration.getBatchSize();
-        dbCrossrefJson = this.environment.openDbi(NAME_CROSSREF_JSON, DbiFlags.MDB_CREATE);
+        dbFatcatJson = this.environment.openDbi(NAME_FATCAT_JSON, DbiFlags.MDB_CREATE);
+        dbDoiToFatcat = this.environment.openDbi(NAME_DOI2FATCAT, DbiFlags.MDB_CREATE);
     }
 
-    public void loadFromFile(InputStream is, CrossrefJsonReader reader, Meter meter) {
+    public void loadFromFile(InputStream is, FatcatJsonReader reader, Meter meter) {
         final TransactionWrapper transactionWrapper = new TransactionWrapper(environment.txnWrite());
         final AtomicInteger counter = new AtomicInteger(0);
 
-        reader.load(is, crossrefData -> {
+        reader.load(is, fatcatData -> {
             if (counter.get() == batchSize) {
                 transactionWrapper.tx.commit();
                 transactionWrapper.tx.close();
                 transactionWrapper.tx = environment.txnWrite();
                 counter.set(0);
             }
-            String key = lowerCase(crossrefData.get("DOI").asText());
+            String key = lowerCase(fatcatData.get("ident").asText());
 
-            store(key, crossrefData.toString(), dbCrossrefJson, transactionWrapper.tx);
+            store(key, fatcatData.toString(), dbFatcatJson, transactionWrapper.tx);
+            // ext_ids is always set; doi is never empty if defined
+            if(fatcatData.get("ext_ids").get("doi") != null) {
+                store(lowerCase(fatcatData.get("ext_ids").get("doi").asText()), key, dbDoiToFatcat, transactionWrapper.tx);
+            }
             meter.mark();
             counter.incrementAndGet();
-
 
         });
         transactionWrapper.tx.commit();
@@ -94,7 +101,7 @@ public class MetadataLookup {
 
         Map<String, Long> sizes = new HashMap<>();
         try (final Txn<ByteBuffer> txn = this.environment.txnRead()) {
-            sizes.put(NAME_CROSSREF_JSON, dbCrossrefJson.stat(txn).entries);
+            sizes.put(NAME_FATCAT_JSON, dbFatcatJson.stat(txn).entries);
         } catch (Env.ReadersFullException e) {
             throw new ServiceOverloadedException("Not enough readers for LMDB access, increase them or reduce the parallel request rate. ", e);
         }
@@ -102,40 +109,69 @@ public class MetadataLookup {
         return sizes;
     }
 
-    public String retrieveJsonDocument(String doi) {
+    public String retrieveJsonDocument(String fatcatIdent) {
         final ByteBuffer keyBuffer = allocateDirect(environment.getMaxKeySize());
         ByteBuffer cachedData = null;
         String record = null;
         try (Txn<ByteBuffer> tx = environment.txnRead()) {
-            keyBuffer.put(BinarySerialiser.serialize(doi)).flip();
-            cachedData = dbCrossrefJson.get(tx, keyBuffer);
+            keyBuffer.put(BinarySerialiser.serialize(fatcatIdent)).flip();
+            cachedData = dbFatcatJson.get(tx, keyBuffer);
             if (cachedData != null) {
                 record = (String) BinarySerialiser.deserializeAndDecompress(cachedData);
             }
         } catch (Env.ReadersFullException e) {
             throw new ServiceOverloadedException("Not enough readers for LMDB access, increase them or reduce the parallel request rate. ", e);
         } catch (Exception e) {
-            LOGGER.error("Cannot retrieve Crossref document by DOI:  " + doi, e);
+            LOGGER.error("Cannot retrieve Fatcat document by ident:  " + fatcatIdent, e);
         }
 
         return record;
 
     }
 
+    public String retrieveJsonDocumentByDoi(String doi) {
+        final ByteBuffer keyBuffer = allocateDirect(environment.getMaxKeySize());
+        ByteBuffer cachedData = null;
+        String record = null;
+        try (Txn<ByteBuffer> tx = environment.txnRead()) {
+            keyBuffer.put(BinarySerialiser.serialize(doi)).flip();
+            cachedData = dbDoiToFatcat.get(tx, keyBuffer);
+            if (cachedData != null) {
+                record = (String) BinarySerialiser.deserializeAndDecompress(cachedData);
+            }
+        } catch (Env.ReadersFullException e) {
+            throw new ServiceOverloadedException("Not enough readers for LMDB access, increase them or reduce the parallel request rate. ", e);
+        } catch (Exception e) {
+            LOGGER.error("Cannot retrieve Fatcat ident by DOI:  " + doi, e);
+        }
+
+        return retrieveJsonDocument(record);
+
+    }
+
     /**
-     * Lookup by DOI
+     * Lookup by fatcatIdent
      **/
-    public MatchingDocument retrieveByMetadata(String doi) {
+    public MatchingDocument retrieveByMetadata(String fatcatIdent) {
+        if (isBlank(fatcatIdent)) {
+            throw new ServiceException(400, "The supplied fatcat ident is null.");
+        }
+        final String jsonDocument = retrieveJsonDocument(lowerCase(fatcatIdent));
+
+        return new MatchingDocument(fatcatIdent, jsonDocument);
+    }
+
+    public MatchingDocument retrieveByMetadataDoi(String doi) {
         if (isBlank(doi)) {
             throw new ServiceException(400, "The supplied DOI is null.");
         }
-        final String jsonDocument = retrieveJsonDocument(lowerCase(doi));
+        final String jsonDocument = retrieveJsonDocumentByDoi(lowerCase(doi));
 
         return new MatchingDocument(doi, jsonDocument);
     }
 
     public List<Pair<String, String>> retrieveList(Integer total) {
-        return retrieveList(total, dbCrossrefJson);
+        return retrieveList(total, dbFatcatJson);
     }
 
     public List<Pair<String, String>> retrieveList(Integer total, Dbi<ByteBuffer> db) {
