@@ -1,0 +1,5 @@
+{
+    "indexName":"fatcat_glutton",
+    "docType": "release",
+    "batchSize": 1000
+}
