@@ -183,38 +183,40 @@ function index(options) {
             var obj = new Object();
 
             // - migrate id from '_id' to 'id'
-            obj._id = data._id.$oid;
-            delete data._id;
+            //obj._id = data._id.$oid;
+            //delete data._id;
 
             // Just keep the fields we want to index
 
             // - Main fields (in the mapping)
-            obj.title = data.title;
-            obj.DOI = data.doi;
+            obj.title = [data.title];
+            obj.DOI = data.ext_ids.doi;
             obj.fatcat_ident = data.ident;
             obj._id = data.ident;
 
             if (data.contribs) {
                 obj.author = "";
-                for (var aut in data.author) {
-                    if (data.author[aut].index === 0) {
-                        if (data.author[aut].family) {
-                            obj.first_author = data.author[aut].family;
-                        } else if (data.author[aut].raw_name) {
-                            obj.first_author = data.author[aut].raw_name;
+                for (var aut in data.contribs) {
+                    if (data.contribs[aut].index === 0) {
+                        if (data.contribs[aut].family) {
+                            obj.first_author = data.contribs[aut].surname;
+                        } else if (data.contribs[aut].raw_name) {
+                            var raw = data.contribs[aut].raw_name.split(' ');
+                            obj.first_author = raw[raw.length - 1];
                         }
                         /*else {
                             obj.first_author = data.author[aut].name;
                             console.log(data.author[aut]);
                         }*/
                     }
-                    if (data.author[aut].family) {
-                        obj.author += data.author[aut].family + " ";
-                    } else if (data.author[aut].raw_name) {
-                        obj.author += data.author[aut].raw_name + " ";
+                    if (data.contribs[aut].surname) {
+                        obj.author += data.contribs[aut].surname + " ";
+                    } else if (data.contribs[aut].raw_name) {
+                        var raw = data.contribs[aut].raw_name.split(' ');
+                        obj.author += raw[raw.length - 1] + " ";
                     }
                     /*else 
-                        console.log(data.author[aut]);*/
+                        console.log(data.contribs[aut]);*/
                 }
                 obj.author = obj.author.trim();
             }
@@ -298,7 +300,7 @@ function index(options) {
     readStream.on("data", function (doc) {
         // console.log('indexing %s', doc.id);
 
-        // filter some type of DOI not corresponding to a publication (e.g. component
+        // filter some type of entities not corresponding to a publication (e.g. component
         // of a publication)
         if (!filterType(doc)) {
             var localId = doc._id;
@@ -391,7 +393,7 @@ function index(options) {
     readStream.on("end", function () {
         if (batch.length > 0) {
             console.log('Loaded %s records', batch.length);
-            client().bulk({
+            client.bulk({
                 refresh: "true", // we wait for this last batch before refreshing
                 body: batch
             }, function (err, resp) {
