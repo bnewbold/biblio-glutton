@@ -3,6 +3,7 @@
 var client = require('./my_connection.js'),
     fs = require('fs'),
     lzma = require('lzma-native'),
+    zlip = require('zlib'),
     es = require('event-stream'),
     async = require("async"),
     sleep = require('sleep');
@@ -174,7 +175,8 @@ function filterType(doc) {
 
 function index(options) {
     var readStream = fs.createReadStream(options.dump)
-        .pipe(lzma.createDecompressor())
+        //.pipe(lzma.createDecompressor())
+        .pipe(zlib.createUnzip())
         .pipe(es.split())
         .pipe(es.map(function (data, cb) {
             // prepare/massage the data
