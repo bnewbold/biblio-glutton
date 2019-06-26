@@ -190,6 +190,11 @@ function index(options) {
 
             // - Main fields (in the mapping)
             obj.title = [data.title];
+            // TODO: should subtitle/original_title actually be included in the array this way?
+            if (data.subtitle)
+                obj.title.push(data.subtitle
+            if (data.original_title)
+                obj.title.push(data.original_title)
             obj.DOI = data.ext_ids.doi;
             obj.fatcat_ident = data.ident;
             obj._id = data.ident;
