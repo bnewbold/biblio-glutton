@@ -36,8 +36,8 @@ public class DataEngine {
         Map<String, String> returnMap = new HashMap<>();
 
         returnMap.put("Doi OA size", String.valueOf(oaDoiLookup.getSize()));
-        returnMap.put("Metadata Lookup Crossref size", String.valueOf(metadataLookup.getSize()));
-        returnMap.put("Metadata Matching Crossref size", String.valueOf(metadataMatching.getSize()));
+        returnMap.put("Metadata Lookup Fatcat size", String.valueOf(metadataLookup.getSize()));
+        returnMap.put("Metadata Matching Fatcat size", String.valueOf(metadataMatching.getSize()));
         returnMap.put("Pmid lookup size", String.valueOf(pmidLookup.getSize()));
         returnMap.put("Istex size", String.valueOf(istexLookup.getSize()));
 

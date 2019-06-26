@@ -122,14 +122,14 @@ public class LookupEngine {
     }
 
     public String retrieveByFatcatIdent(String fatcatIdent, Boolean postValidate, String firstAuthor, String atitle) {
-        MatchingDocument outputData = metadataLookup.retrieveByMetadata(fatcatIdent);
+        MatchingDocument outputData = metadataLookup.retrieveByFatcat(fatcatIdent);
         outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
 
         return injectIdsByDoi(outputData.getJsonObject(), outputData.getDOI());
     }
 
     public String retrieveByDoi(String doi, Boolean postValidate, String firstAuthor, String atitle) {
-        MatchingDocument outputData = metadataLookup.retrieveByMetadataDoi(doi);
+        MatchingDocument outputData = metadataLookup.retrieveByDoi(doi);
         outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
 
         return injectIdsByDoi(outputData.getJsonObject(), outputData.getDOI());
@@ -154,21 +154,28 @@ public class LookupEngine {
         JsonElement jelement = new JsonParser().parse(outputData.getJsonObject());
         JsonObject jobject = jelement.getAsJsonObject();
 
-        final JsonArray titlesFromJson = jobject.get("title").getAsJsonArray();
-        if (titlesFromJson != null && titlesFromJson.size() > 0) {
-            String titleFromJson = titlesFromJson.get(0).getAsString();
+        final String titleFromJson = jobject.get("title").getAsString();
+        if (titleFromJson != null) {
             outputData.setTitle(titleFromJson);
         }
 
-        final JsonArray authorsFromJson = jobject.get("author").getAsJsonArray();
+        final JsonArray authorsFromJson = jobject.get("contribs").getAsJsonArray();
         if (authorsFromJson != null && authorsFromJson.size() > 0) {
 
             String firstAuthorFromJson = "";
             for (int i = 0; i < authorsFromJson.size(); i++) {
                 final JsonObject currentAuthor = authorsFromJson.get(i).getAsJsonObject();
-                if (currentAuthor.has("sequence")
-                        && StringUtils.equals(currentAuthor.get("sequence").getAsString(), "first")) {
-                    firstAuthorFromJson = currentAuthor.get("family").getAsString();
+                if (currentAuthor.has("index")
+                        && (currentAuthor.get("index").getAsInt() == 0)) {
+                    if (currentAuthor.has("surname")) {
+                        firstAuthorFromJson = currentAuthor.get("surname").getAsString();
+                    } else {
+                        firstAuthorFromJson = currentAuthor.get("raw_name").getAsString();
+                        if (firstAuthorFromJson != null) {
+                            String[] fa_split = firstAuthorFromJson.split(" ");
+                            firstAuthorFromJson = fa_split[fa_split.length - 1];
+                        }
+                    }
                     outputData.setFirstAuthor(firstAuthorFromJson);
                     break;
                 }
@@ -207,7 +214,7 @@ public class LookupEngine {
 
         if (istexData != null && CollectionUtils.isNotEmpty(istexData.getDoi()) && isNotBlank(istexData.getDoi().get(0))) {
             final String doi = istexData.getDoi().get(0);
-            MatchingDocument outputData = metadataLookup.retrieveByMetadata(doi);
+            MatchingDocument outputData = metadataLookup.retrieveByDoi(doi);
 
             outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
             //return injectIdsByIstexData(outputData.getJsonObject(), doi, istexData);
@@ -224,7 +231,7 @@ public class LookupEngine {
 
         if (istexData != null && CollectionUtils.isNotEmpty(istexData.getDoi()) && isNotBlank(istexData.getDoi().get(0))) {
             final String doi = istexData.getDoi().get(0);
-            MatchingDocument outputData = metadataLookup.retrieveByMetadata(doi);
+            MatchingDocument outputData = metadataLookup.retrieveByDoi(doi);
 
             outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
             //return injectIdsByIstexData(outputData.getJsonObject(), doi, istexData);

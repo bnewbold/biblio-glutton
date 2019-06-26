@@ -3,6 +3,7 @@ package com.scienceminer.lookup.storage.lookup;
 import com.codahale.metrics.Meter;
 import com.scienceminer.lookup.configuration.LookupConfiguration;
 import com.scienceminer.lookup.data.MatchingDocument;
+import com.scienceminer.lookup.exception.NotFoundException;
 import com.scienceminer.lookup.exception.ServiceException;
 import com.scienceminer.lookup.exception.ServiceOverloadedException;
 import com.scienceminer.lookup.reader.FatcatJsonReader;
@@ -67,7 +68,7 @@ public class MetadataLookup {
                 transactionWrapper.tx = environment.txnWrite();
                 counter.set(0);
             }
-            String key = lowerCase(fatcatData.get("ident").asText());
+            String key = "release_" + lowerCase(fatcatData.get("ident").asText());
 
             store(key, fatcatData.toString(), dbFatcatJson, transactionWrapper.tx);
             // ext_ids is always set; doi is never empty if defined
@@ -129,7 +130,7 @@ public class MetadataLookup {
 
     }
 
-    public String retrieveJsonDocumentByDoi(String doi) {
+    public String retrieveFatcatByDoi(String doi) {
         final ByteBuffer keyBuffer = allocateDirect(environment.getMaxKeySize());
         ByteBuffer cachedData = null;
         String record = null;
@@ -145,14 +146,14 @@ public class MetadataLookup {
             LOGGER.error("Cannot retrieve Fatcat ident by DOI:  " + doi, e);
         }
 
-        return retrieveJsonDocument(record);
+        return record;
 
     }
 
     /**
      * Lookup by fatcatIdent
      **/
-    public MatchingDocument retrieveByMetadata(String fatcatIdent) {
+    public MatchingDocument retrieveByFatcat(String fatcatIdent) {
         if (isBlank(fatcatIdent)) {
             throw new ServiceException(400, "The supplied fatcat ident is null.");
         }
@@ -161,13 +162,16 @@ public class MetadataLookup {
         return new MatchingDocument(fatcatIdent, jsonDocument);
     }
 
-    public MatchingDocument retrieveByMetadataDoi(String doi) {
+    public MatchingDocument retrieveByDoi(String doi) {
         if (isBlank(doi)) {
             throw new ServiceException(400, "The supplied DOI is null.");
         }
-        final String jsonDocument = retrieveJsonDocumentByDoi(lowerCase(doi));
+        final String fatcatIdent = retrieveFatcatByDoi(lowerCase(doi));
 
-        return new MatchingDocument(doi, jsonDocument);
+        if (isBlank(fatcatIdent)) {
+            throw new NotFoundException("No bibliographical record found");
+        }
+        return retrieveByFatcat(fatcatIdent);
     }
 
     public List<Pair<String, String>> retrieveList(Integer total) {

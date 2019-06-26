@@ -61,7 +61,7 @@ public class LookupController {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/")
     public void getByQueryAsync(
-            @QueryParam("fatcat_ident") String fatcatIdent,
+            @QueryParam("fatcat") String fatcatIdent,
             @QueryParam("doi") String doi,
             @QueryParam("pmid") String pmid,
             @QueryParam("pmc") String pmc,
@@ -135,7 +135,7 @@ public class LookupController {
 
             } catch (NotFoundException e) {
                 messagesSb.append(e.getMessage());
-                LOGGER.warn("fatcat ident did not matched, move to additional metadata");
+                LOGGER.warn("fatcat ident did not match, move to additional metadata");
             }
         }
 
