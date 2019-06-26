@@ -192,12 +192,12 @@ function index(options) {
             obj.title = [data.title];
             // TODO: should subtitle/original_title actually be included in the array this way?
             if (data.subtitle)
-                obj.title.push(data.subtitle
+                obj.title.push(data.subtitle)
             if (data.original_title)
                 obj.title.push(data.original_title)
             obj.DOI = data.ext_ids.doi;
             obj.fatcat = "release_" + data.ident;
-            obj._id = data.ident;
+            obj._id = "release_" + data.ident;
 
             if (data.contribs) {
                 obj.author = "";
