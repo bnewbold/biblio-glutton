@@ -125,7 +125,11 @@ public class LookupEngine {
         MatchingDocument outputData = metadataLookup.retrieveByFatcat(fatcatIdent);
         outputData = validateJsonBody(postValidate, firstAuthor, atitle, outputData);
 
-        return injectIdsByDoi(outputData.getJsonObject(), outputData.getDOI());
+        if (outputData.getDOI() != null) {
+            return injectIdsByDoi(outputData.getJsonObject(), outputData.getDOI());
+        } else {
+            return outputData.getJsonObject();
+        }
     }
 
     public String retrieveByDoi(String doi, Boolean postValidate, String firstAuthor, String atitle) {
