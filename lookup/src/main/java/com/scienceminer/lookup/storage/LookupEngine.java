@@ -154,6 +154,10 @@ public class LookupEngine {
         return outputData;
     }
 
+    // NOTE(bnewbold): it's not actually clear to me whether this method is
+    // supposed to parse full documents (fatcat release or crossref work), or
+    // just the short elasticsearch docs. In many cases the schemas overlap.
+    // This version parses fatcat release objects.
     private MatchingDocument extractTitleAndFirstAuthorFromJson(MatchingDocument outputData) {
         JsonElement jelement = new JsonParser().parse(outputData.getJsonObject());
         JsonObject jobject = jelement.getAsJsonObject();

@@ -51,8 +51,8 @@ public class FatcatJsonReader {
                     return;
                 }
 
+                // Don't ignore empty DOI
                 /*
-                //Ignoring empty DOI
                 if (fatcatData.get("DOI") == null || isBlank(fatcatData.get("DOI").asText())) {
                     return;
                 }
