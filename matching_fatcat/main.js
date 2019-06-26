@@ -196,7 +196,7 @@ function index(options) {
             if (data.original_title)
                 obj.title.push(data.original_title)
             obj.DOI = data.ext_ids.doi;
-            obj.fatcat_ident = data.ident;
+            obj.fatcat = "release_" + data.ident;
             obj._id = data.ident;
 
             if (data.contribs) {

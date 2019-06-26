@@ -3,7 +3,7 @@
         "enabled": false
       },
       "properties": {
-        "fatcat_ident": {
+        "fatcat": {
           "type": "text",
           "analyzer": "case_insensitive_keyword"
         },
