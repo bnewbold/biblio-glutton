@@ -44,83 +44,83 @@ public class LookupControllerTest {
     }
 
     /**
-     * DOI correspond to a document, postValidation is passing
-     * -> returning the json corresponding to this DOI
+     * fatcat correspond to a document, postValidation is passing
+     * -> returning the json corresponding to this fatcat
      */
     @Test
-    public void getByQuery_DOIexists_passingPostValidation_shouldReturnJSONBody() {
-        final String myDOI = "myDOI";
+    public void getByQuery_fatcatExists_passingPostValidation_shouldReturnJSONBody() {
+        final String myFatcat = "release_asdf";
         final boolean postValidate = true;
         final String atitle = "atitle";
         final String firstAuthor = "firstAuthor";
 
-        final String jsonOutput = "{\"DOI\":\"" + myDOI + "\",\"title\":[\"" + atitle + "\"],\"author\":[{\"given\":\"Alexander Yu\",\"family\":\"" + firstAuthor + "\",\"sequence\":\"first\",\"affiliation\":[]}]}";
+        final String jsonOutput = "{\"ident\":\"" + myFatcat + "\",\"title\":\"" + atitle + "\",\"contribs\":[{\"given_name\":\"Alexander Yu\",\"surname\":\"" + firstAuthor + "\",\"index\":0}]}";
 
-        final MatchingDocument response = new MatchingDocument(myDOI, jsonOutput);
-        expect(mockMetadataLookup.retrieveByMetadata(myDOI)).andReturn(response);
-        expect(mockIstexLookup.retrieveByDoi(myDOI)).andReturn(null);
-        expect(mockPmidsLookup.retrieveIdsByDoi(myDOI)).andReturn(null);
-        expect(mockOALookup.retrieveOALinkByDoi(myDOI)).andReturn(null);
+        final MatchingDocument response = new MatchingDocument(myFatcat, jsonOutput);
+        expect(mockMetadataLookup.retrieveByFatcat(myFatcat)).andReturn(response);
+        expect(mockIstexLookup.retrieveByDoi(null)).andReturn(null);
+        expect(mockPmidsLookup.retrieveIdsByDoi(null)).andReturn(null);
+        expect(mockOALookup.retrieveOALinkByDoi(null)).andReturn(null);
         expect(mockedAsyncResponse.resume(response.getJsonObject())).andReturn(true);
 
         replay(mockMetadataLookup, mockedAsyncResponse, mockPmidsLookup, mockOALookup, mockIstexLookup, mockMetadataMatching);
-        target.getByQuery(null, myDOI, null, null, null, null, firstAuthor, atitle,
+        target.getByQuery(myFatcat, null, null, null, null, null, firstAuthor, atitle,
                 postValidate, null, null, null, null, null, mockedAsyncResponse);
 
         verify(mockMetadataLookup, mockedAsyncResponse, mockPmidsLookup, mockOALookup, mockIstexLookup, mockMetadataMatching);
     }
 
     /**
-     * DOI correspond to a document, postValidation is not passing
+     * fatcat correspond to a document, postValidation is not passing
      * -> returning the json corresponding to to the result of title + first author
      */
     @Test
-    public void getByQuery_DOIexists_NotPassingPostValidation_shouldReturnJSONFromTitleFirstAuthor() {
-        final String myDOI = "myDOI";
+    public void getByQuery_fatcatExists_NotPassingPostValidation_shouldReturnJSONFromTitleFirstAuthor() {
+        final String myFatcat = "release_asdf";
         final boolean postValidate = true;
         final String atitle = "atitle";
         final String firstAuthor = "firstAuthor";
 
-        final String jsonOutput = "{\"DOI\":\"" + myDOI + "\",\"title\":[\"" + atitle + "12312312313\"],\"author\":[{\"given\":\"Alexander Yu\",\"family\":\"" + firstAuthor + "\",\"sequence\":\"first\",\"affiliation\":[]}]}";
-        final MatchingDocument response = new MatchingDocument(myDOI, jsonOutput);
+        final String jsonOutput = "{\"ident\":\"" + myFatcat + "\",\"title\":\"" + atitle + "12312312313\",\"contribs\":[{\"given_name\":\"Alexander Yu\",\"surname\":\"" + firstAuthor + "\",\"index\":0}]}";
+        final MatchingDocument response = new MatchingDocument(myFatcat, jsonOutput);
 
-        expect(mockMetadataLookup.retrieveByMetadata(myDOI)).andReturn(response);
+        expect(mockMetadataLookup.retrieveByFatcat(myFatcat)).andReturn(response);
         mockMetadataMatching.retrieveByMetadataAsync(eq(atitle), eq(firstAuthor), anyObject());
-//        expect(mockIstexLookup.retrieveByDoi(myDOI)).andReturn(null);
-//        expect(mockPmidsLookup.retrieveIdsByDoi(myDOI)).andReturn(null);
+//        expect(mockIstexLookup.retrieveByDoi(myFatcat)).andReturn(null);
+//        expect(mockPmidsLookup.retrieveIdsByDoi(myFatcat)).andReturn(null);
 //        expect(mockedAsyncResponse.resume(response.getJsonObject())).andReturn(true);
 
-//        expect(lookupEngine.retrieveByDoi(myDOI, postValidate, firstAuthor, atitle))
+//        expect(lookupEngine.retrieveByDoi(myFatcat, postValidate, firstAuthor, atitle))
 //                .andThrow(new NotFoundException("Did not pass the validation"));
 //        lookupEngine.retrieveByArticleMetadataAsync(eq(atitle), eq(firstAuthor), eq(postValidate), anyObject());
 //        expect(mockedAsyncResponse.resume(response)).andReturn(true);
 
         replay(mockMetadataLookup, mockedAsyncResponse, mockPmidsLookup, mockOALookup, mockIstexLookup, mockMetadataMatching);
-        target.getByQuery(null, myDOI, null, null, null, null, firstAuthor, atitle,
+        target.getByQuery(myFatcat, null, null, null, null, null, firstAuthor, atitle,
                 postValidate, null, null, null, null, null, mockedAsyncResponse);
 
         verify(mockMetadataLookup, mockedAsyncResponse, mockPmidsLookup, mockOALookup, mockIstexLookup, mockMetadataMatching);
     }
 
     /**
-     * DOI doesn't match
+     * fatcat doesn't match
      * -> using title and first author -> Match
      */
     @Test
-    public void getByQuery_DOIexists_WithPostvalidation_shouldReturnJSONFromTitleFirstAuthor() {
-        final String myDOI = "myDOI";
+    public void getByQuery_fatcatExists_WithPostvalidation_shouldReturnJSONFromTitleFirstAuthor() {
+        final String myFatcat = "myFatcat";
         final boolean postValidate = true;
         final String atitle = "atitle";
         final String firstAuthor = "firstAuthor";
 
-        final String jsonOutput = "{\"DOI\":\"" + myDOI + "\",\"title\":[\"" + atitle + "12312312313\"],\"author\":[{\"given\":\"Alexander Yu\",\"family\":\"" + firstAuthor + "\",\"sequence\":\"first\",\"affiliation\":[]}]}";
-        final MatchingDocument response = new MatchingDocument(myDOI, jsonOutput);
+        final String jsonOutput = "{\"ident\":\"" + myFatcat + "\",\"title\":\"" + atitle + "12312312313\",\"contribs\":[{\"given_name\":\"Alexander Yu\",\"surname\":\"" + firstAuthor + "\",\"index\":0}]}";
+        final MatchingDocument response = new MatchingDocument(myFatcat, jsonOutput);
 
-        expect(mockMetadataLookup.retrieveByMetadata(myDOI)).andReturn(new MatchingDocument());
+        expect(mockMetadataLookup.retrieveByFatcat(myFatcat)).andReturn(new MatchingDocument());
         mockMetadataMatching.retrieveByMetadataAsync(eq(atitle), eq(firstAuthor), anyObject());
 
         replay(mockMetadataLookup, mockedAsyncResponse, mockPmidsLookup, mockOALookup, mockIstexLookup, mockMetadataMatching);
-        target.getByQuery(null, myDOI, null, null, null, null, firstAuthor, atitle,
+        target.getByQuery(myFatcat, null, null, null, null, null, firstAuthor, atitle,
                 postValidate, null, null, null, null, null, mockedAsyncResponse);
 
         verify(mockMetadataLookup, mockedAsyncResponse, mockPmidsLookup, mockOALookup, mockIstexLookup, mockMetadataMatching);
