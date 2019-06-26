@@ -241,7 +241,7 @@ function index(options) {
                 if (data.container.extra && data.container.extra.abbrev) {
                     obj.abbreviated_journal = data.container.extra.abbrev;
                 }
-            } else {
+            } else if (data.extra) {
                 obj.journal = data.extra['container_name'];
             }
             //data['short-container-title'];
